@@ -1,0 +1,104 @@
+version: '3'
+
+networks:
+  # enable connection with Traefik
+  traefik:
+    external: true
+  # network for the app
+  backend:
+
+services:
+
+  syncthing:
+    image: lscr.io/linuxserver/syncthing
+    container_name: syncthing
+    hostname: syncthing #optional
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    volumes:
+      - /opt/syncthing:/config
+      - /media/data:/downloads
+    ports:
+      - 8384:8384
+      - 22000:22000/tcp
+      - 22000:22000/udp
+      - 21027:21027/udp
+    labels:
+      # The labels are usefull for Traefik only
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      # Get the routes from http
+      - "traefik.http.routers.sync.rule=Host(`home.aur3lex.fr`)"
+      - "traefik.http.routers.sync.entrypoints=web"
+      # Redirect these routes to https
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.sync.middlewares=redirect-to-https@docker"
+      # Get the routes from https
+      - "traefik.http.routers.sync-secured.rule=Host(`home.aur3lex.fr`)"
+      - "traefik.http.routers.sync-secured.entrypoints=web-secure"
+      # Apply autentificiation with http challenge
+      - "traefik.http.routers.sync-secured.tls=true"
+      - "traefik.http.routers.sync-secured.tls.certresolver=myhttpchallenge"
+      - "traefik.http.services.sync.loadbalancer.server.port=8384"
+    restart: unless-stopped
+    networks:
+      - traefik
+      - backend
+
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin
+    container_name: jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+      - JELLYFIN_PublishedServerUrl=192.168.0.5 #optional
+    volumes:
+      - /opt/jellyfin:/config
+      - /media/data:/data
+    ports:
+      - 8096:8096
+      - 8920:8920 #optional
+      - 7359:7359/udp #optional
+      - 1900:1900/udp #optional
+    restart: unless-stopped
+    labels:
+      # The labels are usefull for Traefik only
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      # Get the routes from http
+      - "traefik.http.routers.emby.rule=Host(`jellyfin.aur3lex.fr`)"
+      - "traefik.http.routers.emby.entrypoints=web"
+      # Redirect these routes to https
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.emby.middlewares=redirect-to-https@docker"
+      # Get the routes from https
+      - "traefik.http.routers.emby-secured.rule=Host(`jellyfin.aur3lex.fr`)"
+      - "traefik.http.routers.emby-secured.entrypoints=web-secure"
+      # Apply autentificiation with http challenge
+      - "traefik.http.routers.emby-secured.tls=true"
+      - "traefik.http.routers.emby-secured.tls.certresolver=myhttpchallenge"
+      - "traefik.http.services.emby.loadbalancer.server.port=8096"
+    restart: unless-stopped
+    networks:
+      - traefik
+      - backend
+ 
+  redis:
+    container_name: redis
+    image: redis:6
+    restart: always
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+    # launch Redis in cache mode with :
+    #  - max memory up to 50% of your RAM if needed (--maxmemory 512mb)
+    #  - deleting oldest data when max memory is reached (--maxmemory-policy allkeys-lru)
+    entrypoint: redis-server --maxmemory 512mb -maxmemory-policy allkeys-lru
