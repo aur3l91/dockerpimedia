@@ -1,0 +1,73 @@
+version: '3'
+
+networks:
+  # enable connection with Traefik
+  traefik:
+    external: true
+
+services:
+  wordpress:
+    container_name: naturalove
+    build:
+      # call the Dockerfile in ./naturalove
+      context: ./naturalove
+    restart: always
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      # Connect WordPrerss to the database
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: naturalove
+      WORDPRESS_DB_PASSWORD: xm3tGTUWZQLQ7G
+      WORDPRESS_DB_NAME: naturalove
+    volumes:
+      - ./data:/data
+      - ./scripts:/docker-entrypoint-initwp.d
+      - ./wp-content:/app/wp-content
+    networks:
+      - traefik
+    depends_on:
+        - db
+    labels:
+      # The labels are usefull for Traefik only
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      # Get the routes from http
+      - "traefik.http.routers.wordpresscp.rule=Host(`naturalove.fr`)"
+      - "traefik.http.routers.wordpresscp.entrypoints=web"
+      # Redirect these routes to https
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.wordpresscp.middlewares=redirect-to-https@docker"
+      # Get the routes from https
+      - "traefik.http.routers.wordpresscp-secured.rule=Host(`naturalove.fr`)"
+      - "traefik.http.routers.wordpresscp-secured.entrypoints=web-secure"
+      # Apply autentificiation with http challenge
+      - "traefik.http.routers.wordpresscp-secured.tls=true"
+      - "traefik.http.routers.wordpresscp-secured.tls.certresolver=myhttpchallenge"
+    cpu_count: 8
+    cpus: 1
+    cpu_percent: 30
+    mem_limit: 750m
+
+  db:
+    # this is the database used by Wordpress
+    image: yobasystems/alpine-mariadb
+    restart: always
+    container_name: naturalove_db
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    environment:
+      # Connect WordPrerss to the database
+      MYSQL_DATABASE: naturalove
+      MYSQL_USER: naturalove
+      MYSQL_PASSWORD: xm3tGTUWZQLQ7G
+      MYSQL_RANDOM_ROOT_PASSWORD: '1'
+    volumes:
+      # Persist the database on disk
+      - ./db:/var/lib/mysql
+    networks:
+      - traefik
