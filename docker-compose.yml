@@ -10,8 +10,8 @@ services:
     image: lscr.io/linuxserver/jellyfin
     container_name: jellyfin
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=${PUID}
+      - PGID=${PGID}
       - TZ=${TZ}
       - JELLYFIN_PublishedServerUrl=192.168.0.5 #optional
     volumes:
@@ -72,8 +72,8 @@ services:
     image: ghcr.io/linuxserver/rutorrent
     container_name: rutorrent
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=${PUID}
+      - PGID=${PGID}
     volumes:
       - ${OPT}/rutorrent:/config
       - ${MEDIA}:/downloads
@@ -86,8 +86,8 @@ services:
     image: lscr.io/linuxserver/jackett
     container_name: jackett
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=${PUID}
+      - PGID=${PGID}
       - TZ=${TZ}
       - AUTO_UPDATE=true #optional
       #- RUN_OPTS=<run options here> #optional
@@ -120,8 +120,8 @@ services:
     image: lscr.io/linuxserver/sonarr
     container_name: sonarr
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=${PUID}
+      - PGID=${PGID}
       - TZ=${TZ}
     volumes:
       - ${OPT}/sonarr:/config
@@ -152,8 +152,8 @@ services:
     image: lscr.io/linuxserver/radarr
     container_name: radarr
     environment:
-      - PUID=1000
-      - PGID=1000
+      - PUID=${PUID}
+      - PGID=${PGID}
       - TZ=${TZ}
     volumes:
       - ${OPT}/radarr:/config
