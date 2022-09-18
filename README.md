@@ -9,7 +9,8 @@
     gnupg \
     lsb-release \
     sudo \
-    git-core
+    git-core \
+    wget
     
 ### Installer Docker :    
 
@@ -19,6 +20,12 @@
     echo \
     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
     $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+   
+### Installer Docker-Compose : 
+
+    curl -s https://api.github.com/repos/docker/compose/releases/latest | grep browser_download_url  | grep docker-compose-linux-x86_64 | cut -d '"' -f 4 | wget -qi -
+    chmod +x docker-compose-linux-x86_64
+    sudo mv docker-compose-linux-x86_64 /usr/local/bin/docker-compose
 
 ### Installations :
     cd /home/aurelien
